@@ -98,9 +98,10 @@ if (!isset($_SESSION["username"])) {
 
   <main class="container">
     <div class="grid">
-      <a href="receptek.php" class="card">Reggeli</a>
-      <a href="receptek.php" class="card">Ebéd</a>
-      <a href="receptek.php" class="card">Vacsora</a>
+<a href="receptek.php?cat=reggeli" class="card">Reggeli</a>
+<a href="receptek.php?cat=ebed" class="card">Ebéd</a>
+<a href="receptek.php?cat=vacsora" class="card">Vacsora</a>
+
     </div>
   </main>
 
