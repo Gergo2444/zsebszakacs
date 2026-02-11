@@ -85,15 +85,53 @@ body{
     font-weight:700;
 }
 
+/* ====== USERBOX (BEJELENTKEZVE) ====== */
 .userbox{
     position:fixed;
     top:20px;
     right:20px;
     background:#fff;
-    padding:10px;
-    border-radius:12px;
+    padding:10px 16px;
+    border-radius:14px;
+    box-shadow:0 10px 25px rgba(0,0,0,.25);
+    display:flex;
+    align-items:center;
+    gap:12px;
     z-index:10;
 }
+
+.userbox .username{
+    font-weight:800;
+    color:#111;
+    white-space:nowrap;
+}
+
+/* + Új recept BALRA */
+.userbox .add-btn{
+    background:#4CAF50;
+    color:#fff;
+    padding:6px 12px;
+    border-radius:10px;
+    text-decoration:none;
+    font-weight:700;
+    font-size:14px;
+    white-space:nowrap;
+}
+
+/* Kijelentkezés JOBBRA */
+.userbox .logout-btn{
+    background:#ff4d4d;
+    color:#fff;
+    padding:6px 12px;
+    border-radius:10px;
+    text-decoration:none;
+    font-weight:700;
+    font-size:14px;
+    white-space:nowrap;
+}
+
+/* optional hover */
+.userbox a:hover{ opacity:.9; }
 
 .book-menu{
     position:absolute;
@@ -157,6 +195,7 @@ body{
     background:#4f6ef7;
     color:#fff;
     font-weight:700;
+    cursor:pointer;
 }
 
 .switch{
@@ -177,15 +216,17 @@ body{
 
 <?php if (isset($_SESSION["username"])): ?>
 
+<!-- ✅ BEJELENTKEZVE: + Új recept BALRA, név középen, kijelentkezés jobbra -->
 <div class="userbox">
-<b><?= htmlspecialchars($_SESSION["username"]) ?></b><br>
-<a href="kijelentkezes.php">Kijelentkezés</a>
+    <a href="add_recipe.php" class="add-btn">+ Új recept</a>
+    <span class="username"><?= htmlspecialchars($_SESSION["username"]) ?></span>
+    <a href="kijelentkezes.php" class="logout-btn">Kijelentkezés</a>
 </div>
 
 <div class="book-menu">
     <div class="book-col">
         <a href="receptek.php?cat=reggeli" class="menu-card">Reggeli</a>
-        <a href="receptek.php?cat=ebed" class="menu-card">Ebéd</a>
+        <a href="receptek.php?cat=ebéd" class="menu-card">Ebéd</a>
     </div>
     <div class="book-col">
         <a href="receptek.php?cat=vacsora" class="menu-card">Vacsora</a>
@@ -196,8 +237,8 @@ body{
 <?php else: ?>
 
 <div class="top-right">
-<a href="index.php?tab=login">Bejelentkezés</a>
-<a href="index.php?tab=reg">Regisztráció</a>
+    <a href="index.php?tab=login">Bejelentkezés</a>
+    <a href="index.php?tab=reg">Regisztráció</a>
 </div>
 
 <div class="modal">
@@ -209,11 +250,11 @@ body{
 
 <h2>Regisztráció</h2>
 <form method="post" class="form">
-<input type="hidden" name="do" value="reg">
-<input name="username" placeholder="Felhasználónév" required>
-<input type="email" name="email" placeholder="Email" required>
-<input type="password" name="password" placeholder="Jelszó" required>
-<button class="btn">Regisztráció</button>
+    <input type="hidden" name="do" value="reg">
+    <input name="username" placeholder="Felhasználónév" required>
+    <input type="email" name="email" placeholder="Email" required>
+    <input type="password" name="password" placeholder="Jelszó" required>
+    <button class="btn">Regisztráció</button>
 </form>
 <div class="switch">Van már fiókod? <a href="index.php?tab=login">Bejelentkezés</a></div>
 
@@ -221,13 +262,13 @@ body{
 
 <h2>Bejelentkezés</h2>
 <form method="post" class="form">
-<input type="hidden" name="do" value="login">
-<input name="username" placeholder="Felhasználónév" required>
-<input type="password" name="password" placeholder="Jelszó" required>
-<button class="btn">Bejelentkezés</button>
+    <input type="hidden" name="do" value="login">
+    <input name="username" placeholder="Felhasználónév" required>
+    <input type="password" name="password" placeholder="Jelszó" required>
+    <button class="btn">Bejelentkezés</button>
 </form>
 
-<!-- 🔑 ELFELEJTETT JELSZÓ LINK (EZ A + KÓD) -->
+<!-- 🔑 ELFELEJTETT JELSZÓ LINK -->
 <div style="text-align:center; margin-top:10px;">
     <a href="forgot_password.php" style="font-size:14px; color:#4f6ef7;">
         Elfelejtetted a jelszavad?

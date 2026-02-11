@@ -9,7 +9,7 @@ $user_id = (int)$_SESSION["user_id"];
 
 /* ===== KATEGÓRIA ===== */
 $cat = $_GET["cat"] ?? "reggeli";
-$allowed = ["reggeli","ebed","vacsora","kedvencek"];
+$allowed = ["reggeli","ebéd","vacsora","kedvencek"];
 if (!in_array($cat, $allowed, true)) {
     $cat = "reggeli";
 }
@@ -24,7 +24,7 @@ if ($conn->connect_error) die("Adatbázis hiba");
 /* ===== HÁTTÉR KÉP ===== */
 $bgMap = [
     "reggeli"   => "reggelihatter.jpg",
-    "ebed"      => "ebedhatter.jpg",
+    "ebéd"      => "ebédhatter.jpg",
     "vacsora"   => "vacsorahatter.jpg",
     "kedvencek" => "hatter.jpg"
 ];
@@ -155,6 +155,23 @@ body{
 .fav-btn.active{
     color:#e74c3c;
 }
+
+/* 🗑 TÖRLÉS GOMB */
+.del-btn{
+    position:absolute;
+    top:16px;
+    right:56px; /* a szív mellé */
+    background:#ffecec;
+    color:#b10000;
+    padding:6px 10px;
+    border-radius:10px;
+    font-size:14px;
+    text-decoration:none;
+    font-weight:700;
+}
+.del-btn:hover{
+    opacity:.9;
+}
 </style>
 </head>
 
@@ -189,6 +206,15 @@ body{
     <?php $rid = (int)$r["id"]; ?>
     <div class="recept">
 
+        <!-- 🗑 TÖRLÉS CSAK SAJÁT RECEPTRE -->
+        <?php if (isset($r["user_id"]) && (int)$r["user_id"] === $user_id): ?>
+            <a class="del-btn"
+               href="delete_recipe.php?id=<?= $rid ?>&cat=<?= urlencode($cat) ?>&ing=<?= urlencode($ing) ?>"
+               onclick="return confirm('Biztos törlöd ezt a receptet?');">
+               🗑 Törlés
+            </a>
+        <?php endif; ?>
+
         <!-- ❤️ SZÍV (DB alapján elsőre is piros, ha kedvenc) -->
         <span
             class="fav-btn <?= isset($fav[$rid]) ? "active" : "" ?>"
@@ -200,7 +226,7 @@ body{
         <p>⏱ <?= (int)$r['ido'] ?> perc | 🔥 <?= (int)$r['kaloria'] ?> kcal</p>
 
         <?php if (!empty($r['kep'])): ?>
-            <img src="<?= htmlspecialchars($r['kep']) ?>" alt="<?= htmlspecialchars($r['cim']) ?>">
+            <img src="kepek/<?= htmlspecialchars($r['kep']) ?>" alt="<?= htmlspecialchars($r['cim']) ?>">
         <?php endif; ?>
 
         <p><?= nl2br(htmlspecialchars($r['leiras'])) ?></p>
@@ -229,4 +255,3 @@ function toggleFav(el, rid){
 </div>
 </body>
 </html>
-
