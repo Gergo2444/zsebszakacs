@@ -33,7 +33,7 @@ if($_SERVER["REQUEST_METHOD"] === "POST"){
                 $message = "<p style='color:red;'>A kép túl nagy (max 3MB)!</p>";
             } else {
 
-                $allowedExt = ["jpg","jpeg","png","webp"];
+                $allowedExt = ["jpg","jpeg","png","webp","jfif"];
                 $fileName = $_FILES["kep"]["name"];
                 $fileTmp  = $_FILES["kep"]["tmp_name"];
                 $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
@@ -98,6 +98,7 @@ if($_SERVER["REQUEST_METHOD"] === "POST"){
 <!DOCTYPE html>
 <html lang="hu">
 <head>
+<base href="/vizsga/">
 <meta charset="UTF-8">
 <title>Új recept</title>
 <style>

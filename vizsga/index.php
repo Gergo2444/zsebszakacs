@@ -57,6 +57,7 @@ if (isset($_POST["do"]) && $_POST["do"] === "reg") {
 <!DOCTYPE html>
 <html lang="hu">
 <head>
+<base href="/vizsga/">
 <meta charset="UTF-8">
 <title>Zsebszakács</title>
 

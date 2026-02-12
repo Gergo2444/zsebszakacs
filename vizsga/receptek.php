@@ -7,64 +7,95 @@ if (!isset($_SESSION["username"]) || !isset($_SESSION["user_id"])) {
 
 $user_id = (int)$_SESSION["user_id"];
 
-/* ===== KATEGÓRIA ===== */
-$cat = $_GET["cat"] ?? "reggeli";
-$allowed = ["reggeli","ebéd","vacsora","kedvencek"];
-if (!in_array($cat, $allowed, true)) {
-    $cat = "reggeli";
-}
-
-/* ===== KERESŐ (HOZZÁVALÓ) ===== */
-$ing = trim($_GET["ing"] ?? "");
-
-/* ===== ADATBÁZIS ===== */
 $conn = new mysqli("localhost","root","","zsebszakács");
 if ($conn->connect_error) die("Adatbázis hiba");
+$conn->set_charset("utf8mb4");
 
-/* ===== HÁTTÉR KÉP ===== */
+/* ===== PARAMÉTEREK ===== */
+$id  = (int)($_GET["id"] ?? 0);
+$cat = $_GET["cat"] ?? "reggeli";
+$ing = trim($_GET["ing"] ?? "");
+
+/* ===== CAT NORMALIZÁLÁS (ebed -> ebéd) ===== */
+$cat = mb_strtolower($cat, "UTF-8");
+if ($cat === "ebed") $cat = "ebéd";
+
+/* engedett cat-ek */
+$allowed = ["reggeli","ebéd","vacsora","kedvencek"];
+if (!in_array($cat, $allowed, true)) $cat = "reggeli";
+
+/* ===== HÁTTÉR MAP ===== */
 $bgMap = [
     "reggeli"   => "reggelihatter.jpg",
-    "ebéd"      => "ebédhatter.jpg",
+    "ebéd"      => "ebedhatter.jpg",
     "vacsora"   => "vacsorahatter.jpg",
-    "kedvencek" => "hatter.jpg"
+    "kedvencek" => "hatter.jpg",
 ];
-$bg = $bgMap[$cat] ?? "hatter.jpg";
 
-/* ===== KEDVENCEK BETÖLTÉSE (hogy elsőre is piros legyen) ===== */
+/* alap */
+$bg = $bgMap[$cat] ?? "hatter.jpg";
+$pageTitleCat = $cat;
+
+/* ===== ID NÉZET: recept kategória DB-ből (háttér + cím) ===== */
+if ($id > 0) {
+    $rq = $conn->prepare("SELECT kategoria FROM receptek WHERE id=?");
+    $rq->bind_param("i", $id);
+    $rq->execute();
+    $rrow = $rq->get_result()->fetch_assoc();
+
+    if ($rrow && !empty($rrow["kategoria"])) {
+        $k = trim(mb_strtolower($rrow["kategoria"], "UTF-8"));
+        if ($k === "ebed") $k = "ebéd";
+
+        $pageTitleCat = $k;
+        if (isset($bgMap[$k])) $bg = $bgMap[$k];
+    }
+}
+
+/* ===== KEDVENCEK BETÖLTÉSE (szív állapothoz) ===== */
 $fav = [];
 $fq = $conn->prepare("SELECT recept_id FROM kedvencek WHERE user_id=?");
 $fq->bind_param("i", $user_id);
 $fq->execute();
 $fr = $fq->get_result();
 while ($row = $fr->fetch_assoc()) {
-    $fav[(int)$row["recept_id"]] = true; // gyors lookup
+    $fav[(int)$row["recept_id"]] = true;
 }
 
 /* ===== LEKÉRDEZÉS ===== */
 $params = [];
 $types  = "";
+$sql    = "";
 
-if ($cat === "kedvencek") {
-    // Kedvencek: csak a user kedvenceit listázzuk
-    $sql = "
-        SELECT r.*
-        FROM receptek r
-        INNER JOIN kedvencek k ON k.recept_id = r.id
-        WHERE k.user_id = ?
-    ";
-    $params[] = $user_id;
+if ($id > 0) {
+    // 1 recept (id alapján)
+    $sql = "SELECT * FROM receptek WHERE id=?";
+    $params[] = $id;
     $types .= "i";
 } else {
-    // Normál kategória: receptek táblából kategória szerint
-    $sql = "SELECT * FROM receptek WHERE LOWER(kategoria) = ?";
-    $params[] = $cat;
-    $types .= "s";
+    if ($cat === "kedvencek") {
+        // kedvencek lista
+        $sql = "
+            SELECT r.*
+            FROM receptek r
+            INNER JOIN kedvencek k ON k.recept_id = r.id
+            WHERE k.user_id = ?
+        ";
+        $params[] = $user_id;
+        $types .= "i";
+    } else {
+        // normál kategória
+        $sql = "SELECT * FROM receptek WHERE LOWER(kategoria) = ?";
+        $params[] = $cat;
+        $types .= "s";
+    }
 }
 
-// Hozzávaló szűrő mindkettőhöz
+/* ===== HOZZÁVALÓ SZŰRŐ ===== */
 if ($ing !== "") {
-    $sql .= " AND LOWER(hozzavalok) LIKE ?";
-    $params[] = "%".mb_strtolower($ing)."%";
+    if (stripos($sql, "WHERE") !== false) $sql .= " AND LOWER(hozzavalok) LIKE ?";
+    else $sql .= " WHERE LOWER(hozzavalok) LIKE ?";
+    $params[] = "%" . mb_strtolower($ing, "UTF-8") . "%";
     $types .= "s";
 }
 
@@ -76,23 +107,22 @@ $res = $stmt->get_result();
 <!DOCTYPE html>
 <html lang="hu">
 <head>
+<base href="/vizsga/">
 <meta charset="UTF-8">
-<title><?= ucfirst($cat) ?> – Zsebszakács</title>
+<title><?= htmlspecialchars(($pageTitleCat==="kedvencek" ? "Kedvencek" : ucfirst($pageTitleCat)." receptek")) ?> – Zsebszakács</title>
 
 <style>
 body{
     margin:0;
     font-family: Arial, sans-serif;
     min-height:100vh;
-    background: url("<?= htmlspecialchars($bg) ?>") center/cover no-repeat;
+    background: url("/vizsga/<?= htmlspecialchars($bg) ?>") center/cover no-repeat fixed;
 }
-
 .overlay{
     min-height:100vh;
     background: rgba(0,0,0,.35);
     padding-top:80px;
 }
-
 .top{
     position:fixed;
     top:20px;
@@ -101,7 +131,6 @@ body{
     padding:10px 14px;
     border-radius:12px;
 }
-
 .container{
     max-width:900px;
     margin:auto;
@@ -110,11 +139,7 @@ body{
     border-radius:20px;
     box-shadow:0 20px 60px rgba(0,0,0,.3);
 }
-
-/* ===== KERESŐ ===== */
-.search-box{
-    margin:20px 0;
-}
+.search-box{ margin:20px 0; }
 .search-box input{
     width:100%;
     padding:12px 16px;
@@ -123,7 +148,7 @@ body{
     font-size:16px;
 }
 
-/* ===== RECEPT ===== */
+/* recept kártya */
 .recept{
     margin-top:20px;
     padding:20px;
@@ -131,14 +156,13 @@ body{
     background:#f9f9f9;
     position:relative;
 }
-
 .recept img{
     max-width:100%;
     border-radius:12px;
     margin:12px 0;
 }
 
-/* ❤️ SZÍV GOMB */
+/* ❤️ szív */
 .fav-btn{
     position:absolute;
     top:16px;
@@ -149,14 +173,19 @@ body{
     color:#bbb;
     transition:transform .15s ease, color .15s ease;
 }
-.fav-btn:hover{
-    transform:scale(1.15);
-}
-.fav-btn.active{
-    color:#e74c3c;
-}
+.fav-btn:hover{ transform:scale(1.15); }
+.fav-btn.active{ color:#e74c3c; }
 
-/* 🗑 TÖRLÉS GOMB */
+/* dobbanás */
+@keyframes favPop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.35); }
+  70%  { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+.fav-btn.pop{ animation: favPop .28s ease; }
+
+/* 🗑 törlés */
 .del-btn{
     position:absolute;
     top:16px;
@@ -169,9 +198,7 @@ body{
     text-decoration:none;
     font-weight:700;
 }
-.del-btn:hover{
-    opacity:.9;
-}
+.del-btn:hover{ opacity:.9; }
 </style>
 </head>
 
@@ -186,10 +213,16 @@ body{
 <div class="container">
 <a href="index.php">← Vissza</a>
 
-<h1><?= ($cat==="kedvencek" ? "Kedvencek" : ucfirst($cat)." receptek") ?></h1>
+<h1><?= ($pageTitleCat==="kedvencek" ? "Kedvencek" : ucfirst($pageTitleCat)." receptek") ?></h1>
 
+<!-- SZŰRŐ -->
 <form method="get" class="search-box">
-    <input type="hidden" name="cat" value="<?= htmlspecialchars($cat) ?>">
+    <?php if ($id > 0): ?>
+        <input type="hidden" name="id" value="<?= (int)$id ?>">
+    <?php else: ?>
+        <input type="hidden" name="cat" value="<?= htmlspecialchars($cat) ?>">
+    <?php endif; ?>
+
     <input
         type="text"
         name="ing"
@@ -204,7 +237,7 @@ body{
 
 <?php while ($r = $res->fetch_assoc()): ?>
     <?php $rid = (int)$r["id"]; ?>
-    <div class="recept">
+    <div class="recept" id="recept-<?= $rid ?>">
 
         <!-- 🗑 TÖRLÉS CSAK SAJÁT RECEPTRE -->
         <?php if (isset($r["user_id"]) && (int)$r["user_id"] === $user_id): ?>
@@ -215,21 +248,21 @@ body{
             </a>
         <?php endif; ?>
 
-        <!-- ❤️ SZÍV (DB alapján elsőre is piros, ha kedvenc) -->
+        <!-- ❤️ SZÍV -->
         <span
             class="fav-btn <?= isset($fav[$rid]) ? "active" : "" ?>"
             onclick="toggleFav(this, <?= $rid ?>)"
             title="Kedvencekhez"
         >❤</span>
 
-        <h2><?= htmlspecialchars($r['cim']) ?></h2>
-        <p>⏱ <?= (int)$r['ido'] ?> perc | 🔥 <?= (int)$r['kaloria'] ?> kcal</p>
+        <h2><?= htmlspecialchars($r['cim'] ?? "") ?></h2>
+        <p>⏱ <?= (int)($r['ido'] ?? 0) ?> perc | 🔥 <?= (int)($r['kaloria'] ?? 0) ?> kcal</p>
 
         <?php if (!empty($r['kep'])): ?>
-            <img src="kepek/<?= htmlspecialchars($r['kep']) ?>" alt="<?= htmlspecialchars($r['cim']) ?>">
+            <img src="kepek/<?= htmlspecialchars($r['kep']) ?>" alt="<?= htmlspecialchars($r['cim'] ?? "") ?>">
         <?php endif; ?>
 
-        <p><?= nl2br(htmlspecialchars($r['leiras'])) ?></p>
+        <p><?= nl2br(htmlspecialchars($r['leiras'] ?? "")) ?></p>
     </div>
 <?php endwhile; ?>
 
@@ -238,14 +271,32 @@ function toggleFav(el, rid){
     fetch("toggle_fav.php", {
         method: "POST",
         headers: {"Content-Type":"application/x-www-form-urlencoded"},
-        body: "rid=" + encodeURIComponent(rid)
+        body: "rid=" + encodeURIComponent(rid),
+        credentials: "same-origin"
     })
     .then(r => r.text())
     .then(txt => {
         const res = (txt || "").trim();
-        if(res === "add") el.classList.add("active");
-        else if(res === "del") el.classList.remove("active");
-        else alert("Hiba: " + res);
+
+        if(res === "add"){
+            el.classList.add("active");
+
+            // dobbanás
+            el.classList.remove("pop");
+            void el.offsetWidth;
+            el.classList.add("pop");
+
+            // maradjon ott
+            location.hash = "recept-" + rid;
+
+        } else if(res === "del"){
+            el.classList.remove("active");
+            el.classList.remove("pop");
+            location.hash = "recept-" + rid;
+
+        } else {
+            alert("Hiba: " + res);
+        }
     })
     .catch(() => alert("Hálózati hiba"));
 }

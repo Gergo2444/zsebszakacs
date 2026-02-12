@@ -1,113 +1,114 @@
 <?php
 session_start();
 
-/* ===== VÉDELEM ===== */
-if (!isset($_SESSION["username"])) {
-    header("Location: index.php");
-    exit;
+if (!isset($_SESSION["user_id"])) {
+  header("Location: index.php");
+  exit;
 }
 
-/* ===== HÁTTÉR ===== */
 $bg = "kedvencekhatter.jpg";
 
-/* ===== KEDVENCEK (SESSION ALAPÚ, EGYSZERŰ) ===== */
-$favs = $_SESSION["favorites"] ?? [];
+$conn = new mysqli("localhost", "root", "", "zsebszakács");
+if ($conn->connect_error) die("Kapcsolódási hiba");
+$conn->set_charset("utf8mb4");
+
+$user_id = (int)$_SESSION["user_id"];
+
+$stmt = $conn->prepare("
+  SELECT r.id, r.cim, r.kep
+  FROM kedvencek k
+  JOIN receptek r ON r.id = k.recept_id
+  WHERE k.user_id = ?
+");
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$res = $stmt->get_result();
+
+$favs = [];
+while ($row = $res->fetch_assoc()) $favs[] = $row;
 ?>
 <!DOCTYPE html>
 <html lang="hu">
 <head>
+<base href="/vizsga/">
 <meta charset="UTF-8">
-<title>Kedvencek – Zsebszakács</title>
-
+<title>Kedvencek</title>
 <style>
-/* ===== HÁTTÉR ===== */
 body{
-    margin:0;
-    font-family: Arial, sans-serif;
-    min-height:100vh;
-    background: url("/vizsga/<?php echo $bg; ?>") center/cover no-repeat;
+  margin:0;
+  font-family:Arial, sans-serif;
+  min-height:100vh;
+  background:url("/vizsga/<?php echo $bg; ?>") center/cover no-repeat fixed;
 }
-
-/* ===== FEJLÉC ===== */
-.topbar{
-    position:fixed;
-    top:20px;
-    left:20px;
-}
+.topbar{ position:fixed; top:20px; left:20px; }
 .topbar a{
-    background:#fff;
-    padding:8px 14px;
-    border-radius:12px;
-    text-decoration:none;
-    color:#000;
-    font-weight:700;
+  background:#fff; padding:8px 14px; border-radius:12px;
+  text-decoration:none; color:#000; font-weight:700;
 }
-
-/* ===== USER ===== */
 .userbox{
-    position:fixed;
-    top:20px;
-    right:20px;
-    background:#fff;
-    padding:10px 14px;
-    border-radius:12px;
-    font-weight:700;
+  position:fixed; top:20px; right:20px;
+  background:#fff; padding:10px 14px; border-radius:12px; font-weight:700;
 }
-
-/* ===== TARTALOM ===== */
 .container{
-    max-width:900px;
-    margin:140px auto;
-    background:rgba(255,255,255,.95);
-    border-radius:20px;
-    padding:30px;
-    box-shadow:0 20px 60px rgba(0,0,0,.25);
+  max-width:900px;
+  margin:140px auto 40px;
+  background:rgba(255,255,255,.95);
+  border-radius:20px;
+  padding:30px;
+  box-shadow:0 20px 60px rgba(0,0,0,.25);
 }
-
-h1{
-    margin-top:0;
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:14px;
+  margin-top:16px;
 }
-
-/* ===== KÁRTYÁK ===== */
 .card{
-    background:#f7f7f7;
-    padding:18px;
-    border-radius:14px;
-    margin-bottom:12px;
-    font-size:18px;
+  display:block;
+  background:#fff;
+  border-radius:14px;
+  padding:14px;
+  text-decoration:none;
+  color:#000;
+  box-shadow:0 10px 25px rgba(0,0,0,.12);
 }
-
-.empty{
-    font-size:18px;
-    color:#555;
+.card img{
+  width:100%;
+  height:140px;
+  object-fit:cover;
+  border-radius:12px;
+  display:block;
+  margin-bottom:10px;
 }
+.card h3{ margin:0; font-size:18px; text-align:center; }
+.empty{ font-size:18px; color:#555; }
 </style>
 </head>
 <body>
 
-<!-- VISSZA -->
-<div class="topbar">
-    <a href="index.php">← Vissza</a>
-</div>
+<div class="topbar"><a href="index.php">← Vissza</a></div>
+<div class="userbox"><?php echo htmlspecialchars($_SESSION["username"] ?? ""); ?></div>
 
-<!-- USER -->
-<div class="userbox">
-    <?php echo htmlspecialchars($_SESSION["username"]); ?>
-</div>
-
-<!-- TARTALOM -->
 <div class="container">
-    <h1>Kedvenc receptek</h1>
+  <h1>Kedvenc receptek</h1>
 
-    <?php if (empty($favs)): ?>
-        <p class="empty">Még nincs kedvenc recepted ❤️</p>
-    <?php else: ?>
-        <?php foreach ($favs as $fav): ?>
-            <div class="card">
-                <?php echo htmlspecialchars($fav); ?>
-            </div>
-        <?php endforeach; ?>
-    <?php endif; ?>
+  <?php if (empty($favs)): ?>
+    <p class="empty">Még nincs kedvenc recepted ❤️</p>
+  <?php else: ?>
+    <div class="grid">
+      <?php foreach ($favs as $f): ?>
+        <a class="card" href="receptek.php?id=<?php echo (int)$f["id"]; ?>">
+          <?php
+            $kep = trim($f["kep"] ?? "");
+            if ($kep !== "" && file_exists(__DIR__ . "/kepek/" . $kep)) {
+              echo '<img src="kepek/' . rawurlencode($kep) . '" alt="">';
+            }
+          ?>
+          <h3><?php echo htmlspecialchars($f["cim"] ?? ""); ?></h3>
+        </a>
+      <?php endforeach; ?>
+    </div>
+  <?php endif; ?>
 </div>
 
 </body>

@@ -1,0 +1,80 @@
+Options -MultiViews
+RewriteEngine On
+RewriteBase /vizsga/
+
+# -------------------------------------------------
+# 1) STATIKUS ERŐFORRÁSOK (képek, css, src) - relatív utak mentése
+# -------------------------------------------------
+RewriteRule ^(.*/)?kepek/(.*)$ kepek/$2 [L,NC]
+RewriteRule ^(.*/)?src/(.*)$ src/$2 [L,NC]
+RewriteRule ^(.*/)?style\.css$ style.css [L,NC]
+
+# -------------------------------------------------
+# 2) ROOT PHP FÁJLOK MENTÉSE BÁRHONNAN
+#    (EZ oldja meg a szívecske utáni redirect 404-et!)
+#    pl. /receptek/receptek.php -> /receptek.php
+# -------------------------------------------------
+RewriteRule ^(.*/)?index\.php$ index.php [L,QSA,NC]
+RewriteRule ^(.*/)?receptek\.php$ receptek.php [L,QSA,NC]
+RewriteRule ^(.*/)?kedvencek\.php$ kedvencek.php [L,QSA,NC]
+RewriteRule ^(.*/)?toggle_fav\.php$ toggle_fav.php [L,QSA,NC]
+RewriteRule ^(.*/)?add_recipe\.php$ add_recipe.php [L,QSA,NC]
+RewriteRule ^(.*/)?delete_recipe\.php$ delete_recipe.php [L,QSA,NC]
+RewriteRule ^(.*/)?kijelentkezes\.php$ kijelentkezes.php [L,QSA,NC]
+RewriteRule ^(.*/)?bejelentkezes\.php$ bejelentkezes.php [L,QSA,NC]
+RewriteRule ^(.*/)?regisztracio\.php$ regisztracio.php [L,QSA,NC]
+RewriteRule ^(.*/)?forgot_password\.php$ forgot_password.php [L,QSA,NC]
+RewriteRule ^(.*/)?reset_password\.php$ reset_password.php [L,QSA,NC]
+RewriteRule ^(.*/)?jelszo_update\.php$ jelszo_update.php [L,QSA,NC]
+
+# -------------------------------------------------
+# 3) SZÉP URL-ek MENTÉSE BÁRHONNAN (duplázódó útvonalak ellen)
+# -------------------------------------------------
+RewriteRule ^(.*/)?receptek/(reggeli|ebed|vacsora)/?$ receptek.php?cat=$2 [L,QSA,NC]
+RewriteRule ^(.*/)?receptek/?$ receptek.php?cat=reggeli [L,QSA,NC]
+RewriteRule ^(.*/)?kedvencek/?$ kedvencek.php [L,QSA,NC]
+RewriteRule ^(.*/)?recept/([0-9]+)/?$ receptek.php?id=$2 [L,QSA,NC]
+RewriteRule ^(.*/)?fav/toggle/([0-9]+)/?$ toggle_fav.php?id=$2 [L,QSA,NC]
+
+RewriteRule ^(.*/)?login/?$ bejelentkezes.php [L,QSA,NC]
+RewriteRule ^(.*/)?register/?$ regisztracio.php [L,QSA,NC]
+RewriteRule ^(.*/)?logout/?$ kijelentkezes.php [L,QSA,NC]
+
+# -------------------------------------------------
+# 4) Létező fájl vagy mappa -> NE bántsuk
+# -------------------------------------------------
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# -------------------------------------------------
+# 5) SZÉP URL-ek (alap útvonalak)
+# -------------------------------------------------
+
+# Főoldal
+RewriteRule ^$ index.php [L,QSA]
+
+# Receptek
+RewriteRule ^receptek/?$ receptek.php?cat=reggeli [L,QSA]
+RewriteRule ^receptek/(reggeli|ebed|vacsora)/?$ receptek.php?cat=$1 [L,QSA]
+
+# Recept részletek
+RewriteRule ^recept/([0-9]+)/?$ receptek.php?id=$1 [L,QSA]
+
+# Új recept
+RewriteRule ^recipe/add/?$ add_recipe.php [L,QSA]
+RewriteRule ^recept/uj/?$ add_recipe.php [L,QSA]
+
+# Törlés
+RewriteRule ^recept/torles/([0-9]+)/?$ delete_recipe.php?id=$1 [L,QSA]
+
+# Kedvenc toggle (szép URL)
+RewriteRule ^fav/toggle/([0-9]+)/?$ toggle_fav.php?id=$1 [L,QSA]
+
+# Kedvencek
+RewriteRule ^kedvencek/?$ kedvencek.php [L,QSA]
+
+# Auth
+RewriteRule ^login/?$ bejelentkezes.php [L,QSA]
+RewriteRule ^register/?$ regisztracio.php [L,QSA]
+RewriteRule ^logout/?$ kijelentkezes.php [L,QSA]
