@@ -1,0 +1,81 @@
+/* ===== ALAP ===== */
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  min-height:100vh;
+  color:#fff;
+  background:linear-gradient(120deg,#ff7a18,#2e6bff);
+}
+
+/* ===== KONTAINER ===== */
+.container{
+  max-width:900px;
+  margin:20px auto;
+  padding:20px;
+  background:#fff;
+  color:#000;
+  border-radius:20px;
+  box-shadow:0 20px 60px rgba(0,0,0,.3);
+}
+
+/* ===== FEJLÉC / USER ===== */
+.top{
+  position:fixed;
+  top:20px;
+  right:20px;
+  background:#fff;
+  padding:10px 14px;
+  border-radius:12px;
+  color:#000;
+}
+
+/* ===== RECEPTEK ===== */
+.recept{
+  margin-top:20px;
+  padding:20px;
+  border-radius:16px;
+  background:#f9f9f9;
+}
+
+/* 🔥 EZ A FONTOS RÉSZ – KÉP MÉRET 🔥 */
+.recept img{
+  width:300px !important;     /* ← KÉP MÉRETE */
+  max-width:300px !important;
+  height:auto !important;
+  display:block !important;
+  margin:16px auto !important;
+  border-radius:14px !important;
+}
+
+/* ===== GOMBOK / LINKEK ===== */
+a{
+  text-decoration:none;
+  font-weight:bold;
+  color:#000;
+}
+
+/* ===== CÍMEK ===== */
+h1,h2{
+  margin:0 0 10px;
+  color:#000;
+}
+
+p{
+  opacity:.9;
+}
+/* ===== KERESŐ / SZŰRŐ MEZŐ ===== */
+.search-box{
+  margin: 14px 0 18px;
+}
+
+.search-box input{
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
